@@ -1,0 +1,149 @@
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f7fb;
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Card Layout */
+.card-container {
+  display: flex;
+  width: 100%;
+  max-width: 950px;
+  height: 550px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Left Image Section */
+.login-image-side {
+  flex: 1.2;
+  background-image: url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1400&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+/* Form Section */
+.form-card {
+  flex: 1;
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+  color: #333;
+  font-size: 1rem;
+  transition: 0.3s;
+  box-sizing: border-box;
+}
+
+input:focus {
+  outline: none;
+  border-color: #6c63ff;
+  background-color: #fff;
+}
+
+input::placeholder {
+  color: #999;
+}
+
+/* Password Field */
+.password-field {
+  position: relative;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+/* Button */
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6c63ff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 5px;
+}
+
+.btn:hover {
+  background-color: #554fd8;
+}
+
+/* Links */
+p {
+  text-align: center;
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.forgot a {
+  color: #6c63ff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.forgot a:hover {
+  text-decoration: underline;
+}
+
+.toggle-link {
+  color: #6c63ff;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .card-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .image-side {
+    height: 250px;
+  }
+
+  .form-card {
+    padding: 30px 20px;
+  }
+}
