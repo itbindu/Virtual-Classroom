@@ -1,16 +1,18 @@
+// Updated file: src/components/StudentDashboard.js (ensure meetings are fetched for assigned teacher only)
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./StudentDashboard.css";
-import studentImage from "../../assets/student.png"; // <-- place your student picture inside src folder
+import studentImage from "../../assets/student.png";
 
 function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [approved, setApproved] = useState(false);
+  const [meetings, setMeetings] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkApproval = async () => {
+    const checkApprovalAndFetch = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -25,6 +27,18 @@ function StudentDashboard() {
         });
         console.log("Approval Response:", response.data);
         setApproved(response.data.isApproved);
+
+        // Fetch meetings only if approved (will be for assigned teacher only)
+        if (response.data.isApproved) {
+          try {
+            const meetingsResponse = await axios.get("http://localhost:5000/api/students/meetings", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setMeetings(meetingsResponse.data.meetings || []);
+          } catch (error) {
+            console.error("Fetch meetings error:", error);
+          }
+        }
       } catch (error) {
         console.error("Check approval error:", error.response?.data || error.message);
         if (error.response?.status === 403) {
@@ -38,7 +52,7 @@ function StudentDashboard() {
       }
     };
 
-    checkApproval();
+    checkApprovalAndFetch();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -60,9 +74,12 @@ function StudentDashboard() {
       <div className="dashboard-content">
         {/* Left side - Buttons */}
         <div className="dashboard-left">
-          <div className="dashboard-box">Meeting Links</div>
+          <Link to="/meeting-links" className="dashboard-box">
+            Meeting Links (From Your Teacher)
+          </Link>
+          <div className="dashboard-box">Quiz</div>
           <div className="dashboard-box">Notifications</div>
-          <div className="dashboard-box">Assignments / Quiz</div>
+          <div className="dashboard-box">Assignments</div>
           <div className="dashboard-box">Leaderboard</div>
           <div className="dashboard-box">Attendance</div>
         </div>

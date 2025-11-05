@@ -1,16 +1,20 @@
+// Updated file: src/App.js (add route for teacher meeting room)
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
-// ✅ Correct imports based on your folder names
 import HomePage from './components/HomePage';
 import TeacherRegister from './components/Teacher/TeacherRegister';
 import TeacherLogin from './components/Teacher/TeacherLogin';
 import TeacherDashboard from './components/Teacher/TeacherDashboard';
+import CreateMeeting from './components/CreateMeeting';
+import TeacherMeetingRoom from './components/TeacherMeetingRoom'; // New import
 import StudentRegister from './components/Student/StudentRegister';
 import StudentLogin from './components/Student/StudentLogin';
 import StudentDashboard from './components/Student/StudentDashboard';
+import MeetingLinks from './components/MeetingLinks';
 import ForgotPassword from './components/ForgotPassword';
+import JoinMeeting from './components/JoinMeeting';
 
 function App() {
   return (
@@ -20,9 +24,14 @@ function App() {
         <Route path="/teacher/register" element={<TeacherRegister />} />
         <Route path="/teacher/login" element={<TeacherLogin />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        <Route path="/teacher/create-meeting" element={<CreateMeeting />} />
+        <Route path="/teacher/meeting/:meetingId" element={<TeacherMeetingRoom />} /> {/* New route */}
         <Route path="/student/register" element={<StudentRegister />} />
         <Route path="/student/login" element={<StudentLogin />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/meeting-links" element={<MeetingLinks />} />
+        <Route path="/meeting/:meetingId" element={<JoinMeeting />} />
+        
         <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </Router>

@@ -1,0 +1,51 @@
+/* New file: src/components/MeetingLinks.css (optional styling) */
+.meeting-links-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.meetings-list {
+  list-style: none;
+  padding: 0;
+}
+
+.meeting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.meeting-info h3 {
+  margin: 0 0 5px 0;
+}
+
+.meeting-info p {
+  margin: 0;
+  color: #666;
+}
+
+.join-btn, .back-btn {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.back-btn {
+  background-color: #6c757d;
+  margin-top: 20px;
+}
+
+.error {
+  color: red;
+}
