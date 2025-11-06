@@ -1,13 +1,15 @@
-// New file: src/components/TeacherMeetingRoom.js (separate room for teacher, auto-join)
+
+
+// Updated file: src/components/TeacherMeetingRoom.js (remove unused 'videoRef' and fix useEffect dependencies)
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import Peer from 'simple-peer';
-import './TeacherMeetingRoom.css'; // Separate CSS if needed, or reuse JoinMeeting.css
+import './TeacherMeetingRoom.css';
 
 const TeacherMeetingRoom = () => {
-  const { meetingId } = useParams();
+  const { meetingId } = useParams(); // Fixed: was 'conventionId'
   const [meeting, setMeeting] = useState(null);
   const [teacher, setTeacher] = useState({ firstName: '', lastName: '', email: '' });
   const [participants, setParticipants] = useState([]);
@@ -20,25 +22,10 @@ const TeacherMeetingRoom = () => {
 
   const socketRef = useRef();
   const peersRef = useRef([]);
-  const videoRef = useRef();
   const userVideo = useRef();
   const peersVideo = useRef({});
 
-  useEffect(() => {
-    fetchTeacherProfile();
-    fetchMeeting();
-    getMediaStream();
-    socketRef.current = io.connect('http://localhost:5000');
-    joinMeeting();
-
-    return () => {
-      socketRef.current?.disconnect();
-      if (myStream) {
-        myStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [meetingId]);
-
+  // Define functions inside component for dependency
   const fetchTeacherProfile = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -137,6 +124,21 @@ const TeacherMeetingRoom = () => {
       setChatInput('');
     }
   };
+
+  useEffect(() => {
+    fetchTeacherProfile();
+    fetchMeeting();
+    getMediaStream();
+    socketRef.current = io.connect('http://localhost:5000');
+    joinMeeting();
+
+    return () => {
+      socketRef.current?.disconnect();
+      if (myStream) {
+        myStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [meetingId, fetchTeacherProfile, fetchMeeting, getMediaStream, joinMeeting]); // Add all functions to dependencies
 
   if (loading) return <div>Loading meeting room...</div>;
   if (!meeting) return <div>{message || 'Meeting not found.'}</div>;

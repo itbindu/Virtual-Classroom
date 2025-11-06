@@ -1,4 +1,4 @@
-// Updated file: src/components/StudentDashboard.js (ensure meetings are fetched for assigned teacher only)
+// Updated file: src/components/Student/StudentDashboard.js (remove unused 'meetings')
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
@@ -8,7 +8,6 @@ import studentImage from "../../assets/student.png";
 function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [approved, setApproved] = useState(false);
-  const [meetings, setMeetings] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,13 +27,13 @@ function StudentDashboard() {
         console.log("Approval Response:", response.data);
         setApproved(response.data.isApproved);
 
-        // Fetch meetings only if approved (will be for assigned teacher only)
+        // Fetch meetings only if approved
         if (response.data.isApproved) {
           try {
             const meetingsResponse = await axios.get("http://localhost:5000/api/students/meetings", {
               headers: { Authorization: `Bearer ${token}` },
             });
-            setMeetings(meetingsResponse.data.meetings || []);
+            // Use meetings if needed, but not assigned to state to avoid unused warning
           } catch (error) {
             console.error("Fetch meetings error:", error);
           }
@@ -74,12 +73,9 @@ function StudentDashboard() {
       <div className="dashboard-content">
         {/* Left side - Buttons */}
         <div className="dashboard-left">
-          <Link to="/meeting-links" className="dashboard-box">
-            Meeting Links (From Your Teacher)
-          </Link>
-          <div className="dashboard-box">Quiz</div>
+          <Link to="/meeting-links" className="dashboard-box">Meeting Links</Link>
           <div className="dashboard-box">Notifications</div>
-          <div className="dashboard-box">Assignments</div>
+          <div className="dashboard-box">Assignments / Quiz</div>
           <div className="dashboard-box">Leaderboard</div>
           <div className="dashboard-box">Attendance</div>
         </div>
