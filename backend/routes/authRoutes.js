@@ -3,8 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateAndSendOtp, verifyOtp } = require('../services/otpService');
 const authenticateToken = require('../middleware/auth');
-const Teacher = require('../models/Teacher');
-const Student = require('../models/Student');
+const Teacher = require('../Models/Teacher');
+const Student = require('../Models/Student');
 
 const router = express.Router();
 

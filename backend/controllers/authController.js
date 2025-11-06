@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const User = require('../Models/User');
 
 // Sign up logic
 exports.signup = async (req, res) => {
