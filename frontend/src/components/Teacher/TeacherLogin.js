@@ -1,5 +1,6 @@
+// Updated file: src/components/Teacher/TeacherLogin.js (full fixes: add state, Link import, error handling)
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Added Link import
 import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./TeacherLogin.css";
@@ -8,12 +9,16 @@ const TeacherLogin = () => {
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // Added
+  const [message, setMessage] = useState(''); // Added
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!emailOrPhone) return alert("Enter your email or phone.");
     if (!password) return alert("Enter your password.");
+    setLoading(true);
+    setMessage(''); // Clear previous message
 
     try {
       const response = await axios.post(
@@ -22,12 +27,17 @@ const TeacherLogin = () => {
       );
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
+        if (response.data.user) {
+          localStorage.setItem('teacherUser', JSON.stringify(response.data.user));
+        }
         alert("Login successful!");
         navigate("/teacher/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
-      alert("Invalid credentials. Try again.");
+      setMessage(error.response?.data?.message || 'Invalid credentials. Try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,23 +74,22 @@ const TeacherLogin = () => {
               </span>
             </div>
 
-            <button type="submit" className="btn">
-              Login
+            <button type="submit" className="btn" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
             </button>
 
             <p className="forgot">
-              <a href="/forgot-password">Forgot Password?</a>
+              <Link to="/forgot-password">Forgot Password?</Link>
             </p>
           </form>
 
+          {message && <p className="error-message">{message}</p>}
+
           <p>
-            Don’t have an account?{" "}
-            <span
-              onClick={() => navigate("/teacher/register")}
-              className="toggle-link"
-            >
+            Don't have an account?{" "}
+            <Link to="/teacher/register" className="toggle-link">
               Register
-            </span>
+            </Link>
           </p>
         </div>
       </div>

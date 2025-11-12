@@ -70,7 +70,7 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// Login teacher
+// Updated file: backend/routes/teacherRoutes.js (store user data in login response for localStorage)
 router.post('/login', async (req, res) => {
   const { emailOrPhone, password } = req.body;
   if (!emailOrPhone || !password) return res.status(400).json({ message: 'Email/Phone and password are required' });
@@ -87,13 +87,24 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(200).json({ token, userId: user._id });
+    const userData = { firstName: user.firstName, lastName: user.lastName, email: user.email }; // For localStorage
+    res.status(200).json({ token, userId: user._id, user: userData });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+// Updated backend /api/teachers/profile (ensure it returns name)
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.user.id).select('firstName lastName email');
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    res.status(200).json(teacher); // Returns { firstName, lastName, email }
+  } catch (error) {
+    console.error('Fetch teacher profile error:', error);
+    res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
 // Fetch ALL students with populated teachers info
 router.get('/registered-students', authenticateToken, async (req, res) => {
   try {
@@ -238,5 +249,36 @@ router.get('/profile', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch profile' });
   }
 });
+// Backend update: Add teacher meeting endpoint (symmetric to student)
+ // Add to backend/routes/teacherRoutes.js
 
+// Get meeting details (no auth needed for public join link)
+router.get('/meeting/:meetingId', async (req, res) => {
+  const { meetingId } = req.params;
+  try {
+    const meeting = await Meeting.findOne({ meetingId }).populate('teacherId', 'firstName lastName');
+    if (!meeting || !meeting.isActive) return res.status(404).json({ message: 'Meeting not found or inactive' });
+    res.status(200).json({ success: true, meeting });
+  } catch (error) {
+    console.error('Get meeting error:', error);
+    res.status(500).json({ message: 'Failed to get meeting details' });
+  }
+});
+
+// Updated backend/routes/teacherRoutes.js (add endpoint for meeting history)
+router.get('/meeting-history/:meetingId', authenticateToken, async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId })
+      .populate('teacherId', 'firstName lastName')
+      .populate('logs.userId', 'firstName lastName email'); // If userId refs User model; adjust if needed
+    if (!meeting || meeting.teacherId._id.toString() !== req.user.id) {
+      return res.status(404).json({ message: 'Meeting not found' });
+    }
+    res.status(200).json({ success: true, meeting, logs: meeting.logs });
+  } catch (error) {
+    console.error('Fetch history error:', error);
+    res.status(500).json({ message: 'Failed to fetch history' });
+  }
+});
 module.exports = router;

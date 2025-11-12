@@ -1,6 +1,4 @@
-
-
-// Updated file: src/components/TeacherMeetingRoom.js (remove unused 'videoRef' and fix useEffect dependencies)
+// Updated file: src/components/TeacherMeetingRoom.js (layout matching sketch: header, video grid with teacher prominent, sidebar participants, bottom controls with blackboard)
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -9,44 +7,69 @@ import Peer from 'simple-peer';
 import './TeacherMeetingRoom.css';
 
 const TeacherMeetingRoom = () => {
-  const { meetingId } = useParams(); // Fixed: was 'conventionId'
+  const { meetingId } = useParams();
   const [meeting, setMeeting] = useState(null);
-  const [teacher, setTeacher] = useState({ firstName: '', lastName: '', email: '' });
   const [participants, setParticipants] = useState([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [myStream, setMyStream] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [screenSharing, setScreenSharing] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [showBlackboard, setShowBlackboard] = useState(false); // Placeholder for blackboard
+  const [showChat, setShowChat] = useState(false); // Collapsible chat
   const navigate = useNavigate();
 
   const socketRef = useRef();
   const peersRef = useRef([]);
   const userVideo = useRef();
   const peersVideo = useRef({});
+  const screenStreamRef = useRef(null);
 
-  // Define functions inside component for dependency
-  const fetchTeacherProfile = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/teachers/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTeacher(response.data.teacher);
-    } catch (error) {
-      setMessage('Failed to fetch profile: ' + (error.response?.data?.message || error.message));
-    }
-  };
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      setMessage('');
+      try {
+        await fetchMeeting();
+        await getMediaStream();
+        initSocket();
+      } catch (error) {
+        console.error('Meeting room initialization error:', error);
+        setMessage('Failed to initialize meeting room: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+    return () => {
+      socketRef.current?.disconnect();
+      if (myStream) {
+        myStream.getTracks().forEach(track => track.stop());
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      peersRef.current.forEach(({ peer }) => peer.destroy());
+    };
+  }, [meetingId]);
 
   const fetchMeeting = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/students/meeting/${meetingId}`);
+      const response = await axios.get(`http://localhost:5000/api/teachers/meeting/${meetingId}`);
       setMeeting(response.data.meeting);
-      setParticipants(response.data.meeting.participants || []);
+      const updatedParticipants = (response.data.meeting.participants || []).map(p => ({ ...p, isTeacher: false }));
+      setParticipants(updatedParticipants);
     } catch (error) {
-      setMessage('Meeting not found or inactive.');
-    } finally {
-      setLoading(false);
+      console.error('Fetch meeting error:', error);
+      if (error.response?.status === 404) {
+        throw new Error('Meeting not found or inactive.');
+      } else {
+        throw error;
+      }
     }
   };
 
@@ -56,20 +79,114 @@ const TeacherMeetingRoom = () => {
       setMyStream(stream);
       if (userVideo.current) userVideo.current.srcObject = stream;
     } catch (error) {
-      setMessage('Failed to access camera/microphone: ' + error.message);
+      console.error('Media stream error:', error);
+      setMessage('Failed to access camera/microphone (continuing without): ' + error.message);
     }
   };
 
-  const joinMeeting = () => {
-    socketRef.current.emit('join-meeting', meetingId);
+  const toggleVideo = () => {
+    if (myStream && myStream.getVideoTracks().length > 0) {
+      const videoTrack = myStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoEnabled;
+      setVideoEnabled(!videoEnabled);
+    } else {
+      console.warn('No video track available to toggle');
+    }
+  };
 
-    // Handle incoming peers (students joining)
+  const toggleAudio = () => {
+    if (myStream && myStream.getAudioTracks().length > 0) {
+      const audioTrack = myStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioEnabled;
+      setAudioEnabled(!audioEnabled);
+    } else {
+      console.warn('No audio track available to toggle');
+    }
+  };
+
+  const startScreenShare = async () => {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenVideoTrack = screenStream.getVideoTracks()[0];
+      screenVideoTrack.onended = () => stopScreenShare();
+
+      const audioTracks = myStream ? myStream.getAudioTracks() : [];
+      const newStream = new MediaStream([
+        screenVideoTrack,
+        ...audioTracks
+      ]);
+      setMyStream(newStream);
+      setScreenSharing(true);
+      if (userVideo.current) userVideo.current.srcObject = newStream;
+
+      peersRef.current.forEach(({ peer }) => {
+        const videoSender = peer.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (videoSender) {
+          videoSender.replaceTrack(screenVideoTrack);
+        }
+      });
+
+      screenStreamRef.current = screenStream;
+    } catch (error) {
+      console.error('Screen share error:', error);
+      setMessage('Failed to start screen share: ' + error.message);
+    }
+  };
+
+  const stopScreenShare = async () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
+
+    try {
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+
+      const audioTracks = myStream ? myStream.getAudioTracks() : [];
+      const newStream = new MediaStream([
+        cameraVideoTrack,
+        ...audioTracks
+      ]);
+      setMyStream(newStream);
+      setScreenSharing(false);
+      if (userVideo.current) userVideo.current.srcObject = newStream;
+
+      peersRef.current.forEach(({ peer }) => {
+        const videoSender = peer.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (videoSender) {
+          videoSender.replaceTrack(cameraVideoTrack);
+        }
+      });
+
+      cameraStream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Resume camera error:', error);
+      setMessage('Failed to resume camera: ' + error.message);
+    }
+  };
+
+  const toggleBlackboard = () => {
+    setShowBlackboard(!showBlackboard);
+    // TODO: Integrate actual blackboard/whiteboard component
+  };
+
+  const initSocket = () => {
+    if (!socketRef.current) {
+      socketRef.current = io.connect('http://localhost:5000');
+    }
+    socketRef.current.emit('join-meeting', { meetingId, userInfo: { name: 'Teacher', isTeacher: true } });
+
+    socketRef.current.on('participants-update', (updatedParticipants) => {
+      const safeParticipants = updatedParticipants.map(p => ({ ...p, isTeacher: p.isTeacher || false }));
+      setParticipants(safeParticipants);
+    });
+
     socketRef.current.on('user-joined', (data) => {
-      const peer = createPeer(data.userId, myStream, true); // Teacher initiates
+      const peer = createPeer(data.userId, myStream, true);
       peersRef.current.push({ peer, userId: data.userId });
     });
 
-    // Signaling for WebRTC
     socketRef.current.on('offer', (data) => {
       const peer = createPeer(data.sender, myStream, false);
       peer.signal(data.offer);
@@ -78,15 +195,14 @@ const TeacherMeetingRoom = () => {
 
     socketRef.current.on('answer', (data) => {
       const peer = peersRef.current.find(p => p.userId === data.sender);
-      if (peer && peer.peer) peer.peer.signal(data.answer);
+      if (peer) peer.peer.signal(data.answer);
     });
 
     socketRef.current.on('ice-candidate', (data) => {
       const peer = peersRef.current.find(p => p.userId === data.sender);
-      if (peer && peer.peer) peer.peer.signal(data.candidate);
+      if (peer) peer.peer.signal(data.candidate);
     });
 
-    // Chat
     socketRef.current.on('chat-message', (data) => {
       setChatMessages(prev => [...prev, data]);
     });
@@ -100,6 +216,7 @@ const TeacherMeetingRoom = () => {
     });
 
     peer.on('signal', (data) => {
+      if (!socketRef.current) return;
       if (data.type === 'offer' || data.type === 'answer') {
         socketRef.current.emit(data.type, { meetingId, [data.type]: data, sender: socketRef.current.id });
       } else if (data.candidate) {
@@ -119,76 +236,135 @@ const TeacherMeetingRoom = () => {
   const sendChatMessage = (e) => {
     e.preventDefault();
     if (chatInput.trim()) {
-      const sender = `${teacher.firstName} ${teacher.lastName}`;
-      socketRef.current.emit('chat-message', { meetingId, message: chatInput, sender });
+      socketRef.current.emit('chat-message', { meetingId, message: chatInput, sender: 'Teacher', timestamp: new Date() });
       setChatInput('');
     }
   };
 
-  useEffect(() => {
-    fetchTeacherProfile();
-    fetchMeeting();
-    getMediaStream();
-    socketRef.current = io.connect('http://localhost:5000');
-    joinMeeting();
+  const leaveMeeting = () => {
+    // TODO: Emit end-meeting signal to close room
+    navigate('/teacher/dashboard');
+  };
 
-    return () => {
-      socketRef.current?.disconnect();
-      if (myStream) {
-        myStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [meetingId, fetchTeacherProfile, fetchMeeting, getMediaStream, joinMeeting]); // Add all functions to dependencies
+  if (loading) {
+    return (
+      <div className="meeting-room-container">
+        <div className="header">
+          <h2>Loading meeting...</h2>
+        </div>
+      </div>
+    );
+  }
 
-  if (loading) return <div>Loading meeting room...</div>;
-  if (!meeting) return <div>{message || 'Meeting not found.'}</div>;
+  if (!meeting) {
+    return (
+      <div className="meeting-room-container">
+        <div className="header">
+          <h2>Meeting Error</h2>
+        </div>
+        <p>{message || 'Meeting not found.'}</p>
+        <button onClick={() => navigate('/teacher/dashboard')} className="leave-btn">Back to Dashboard</button>
+      </div>
+    );
+  }
 
   return (
-    <div className="teacher-meeting-container">
-      <h2>Meeting Room: {meeting.title}</h2>
-      <p>You are hosting as: {teacher.firstName} {teacher.lastName}</p>
-      <p>Current Participants: {participants.length}</p>
-      
-      <div className="meeting-room">
+    <div className="meeting-room-container">
+      {/* Header */}
+      <div className="header">
+        <h2>{meeting.title}</h2>
+        <button onClick={leaveMeeting} className="leave-btn">Leave Meeting</button>
+      </div>
+
+      {message && <p className="error-message">{message}</p>}
+
+      {/* Main Layout */}
+      <div className="main-layout">
         {/* Video Section */}
         <div className="video-section">
-          <h3>Your Video (Teacher)</h3>
-          <video ref={userVideo} autoPlay muted playsInline className="user-video" />
-          
-          <h3>Students Videos</h3>
-          <div className="peers-videos">
-            {Object.keys(peersVideo.current).map((id) => (
-              <video key={id} ref={el => { if (el) peersVideo.current[id] = el; }} autoPlay playsInline className="peer-video" />
-            ))}
+          {/* Teacher's Video (Prominent) */}
+          <div className="teacher-video">
+            <h3>Teacher</h3>
+            <video ref={userVideo} autoPlay muted playsInline className="large-video" />
+          </div>
+
+          {/* Students Videos Grid */}
+          <div className="students-videos">
+            <h3>Participants Videos</h3>
+            <div className="remote-videos-grid">
+              {Object.keys(peersVideo.current).map((id) => (
+                <video key={id} ref={(el) => { if (el) peersVideo.current[id] = el; }} autoPlay playsInline className="small-video" />
+              ))}
+            </div>
           </div>
         </div>
-        
-        {/* Chat Section */}
-        <div className="chat-section">
-          <h3>Chat</h3>
+
+        {/* Participants Sidebar */}
+        <div className="participants-sidebar">
+          <h3>List of Students</h3>
+          <ul>
+            {participants.map((p, index) => (
+              <li key={index || p.email || 'anon'}>
+                {p.name} ({p.email || 'N/A'})
+                {p.isTeacher && ' (Host)'}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Controls Footer */}
+      <div className="controls-footer">
+        <button onClick={toggleVideo} className="control-btn">
+          {videoEnabled ? 'Video Mute' : 'Video Unmute'}
+        </button>
+        <button onClick={toggleAudio} className="control-btn">
+          {audioEnabled ? 'Mic Mute' : 'Mic Unmute'}
+        </button>
+        <button onClick={screenSharing ? stopScreenShare : startScreenShare} className="control-btn">
+          {screenSharing ? 'Stop Screen Share' : 'Screen Share'}
+        </button>
+        <button onClick={toggleBlackboard} className="control-btn">
+          Blackboard
+        </button>
+        <button onClick={() => setShowChat(!showChat)} className="control-btn">
+          {showChat ? 'Hide Chat' : 'Chat'}
+        </button>
+      </div>
+
+      {/* Collapsible Chat */}
+      {showChat && (
+        <div className="chat-overlay">
           <div className="chat-messages">
             {chatMessages.map((msg, index) => (
               <div key={index} className="message">
-                <strong>{msg.sender}:</strong> {msg.message} <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
+                <strong>{msg.sender}:</strong> {msg.message}
+                <small>{new Date(msg.timestamp).toLocaleTimeString()}</small>
               </div>
             ))}
           </div>
-          <form onSubmit={sendChatMessage} className="chat-input-form">
+          <form onSubmit={sendChatMessage} className="chat-form">
             <input
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Type a message as teacher..."
+              placeholder="Type message..."
             />
             <button type="submit">Send</button>
           </form>
         </div>
-      </div>
-      
-      {message && <p className="error">{message}</p>}
-      <button onClick={() => navigate('/teacher/dashboard')} className="leave-btn">
-        End Meeting & Back to Dashboard
-      </button>
+      )}
+
+      {/* Placeholder Blackboard Modal */}
+      {showBlackboard && (
+        <div className="blackboard-modal">
+          <div className="blackboard-content">
+            <h3>Blackboard</h3>
+            <canvas width="600" height="400" className="blackboard-canvas"></canvas>
+            <button onClick={toggleBlackboard}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

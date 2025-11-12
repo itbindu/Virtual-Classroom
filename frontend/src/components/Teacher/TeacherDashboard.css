@@ -73,3 +73,32 @@ li {
   margin: 10px 0;
   font-weight: bold;
 }
+/* Updated file: src/components/Teacher/TeacherDashboard.css (add close button style)*/
+.close-btn {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+/* Add to TeacherDashboard.css for table */
+.history-section {
+  margin-top: 20px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th, .history-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.history-table th {
+  background-color: #f2f2f2;
+}

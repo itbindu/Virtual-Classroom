@@ -1,4 +1,4 @@
-// Updated file: src/components/Student/StudentDashboard.js (remove unused 'meetings')
+// Updated file: src/components/Student/StudentDashboard.js (add name display)
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
@@ -8,6 +8,7 @@ import studentImage from "../../assets/student.png";
 function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [approved, setApproved] = useState(false);
+  const [studentName, setStudentName] = useState(''); // New state for name
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,13 +28,22 @@ function StudentDashboard() {
         console.log("Approval Response:", response.data);
         setApproved(response.data.isApproved);
 
-        // Fetch meetings only if approved
+        // Fetch student profile if approved
         if (response.data.isApproved) {
           try {
-            const meetingsResponse = await axios.get("http://localhost:5000/api/students/meetings", {
+            const profileResponse = await axios.get("http://localhost:5000/api/students/profile", {
               headers: { Authorization: `Bearer ${token}` },
             });
-            // Use meetings if needed, but not assigned to state to avoid unused warning
+            setStudentName(`${profileResponse.data.firstName} ${profileResponse.data.lastName}`);
+          } catch (error) {
+            console.error("Fetch profile error:", error);
+          }
+
+          // Fetch meetings if needed
+          try {
+            await axios.get("http://localhost:5000/api/students/meetings", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
           } catch (error) {
             console.error("Fetch meetings error:", error);
           }
@@ -69,7 +79,7 @@ function StudentDashboard() {
 
   return (
     <div className="dashboard-container">
-      <h2 className="dashboard-title">Student Dashboard</h2>
+      <h2 className="dashboard-title">Welcome, {studentName}!</h2>
       <div className="dashboard-content">
         {/* Left side - Buttons */}
         <div className="dashboard-left">

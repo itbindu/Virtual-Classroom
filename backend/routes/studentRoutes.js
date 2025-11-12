@@ -96,7 +96,17 @@ router.get('/check-approval', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to check approval' });
   }
 });
-
+// New backend route for student profile (add to backend/routes/studentRoutes.js)
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.user.id).select('firstName lastName email');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.status(200).json({ firstName: student.firstName, lastName: student.lastName, email: student.email });
+  } catch (error) {
+    console.error('Fetch student profile error:', error);
+    res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
 // Get meetings from all assigned teachers
 router.get('/meetings', authenticateToken, async (req, res) => {
   try {

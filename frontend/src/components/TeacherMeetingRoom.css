@@ -1,46 +1,49 @@
-/* New file: src/components/TeacherMeetingRoom.css (similar to JoinMeeting.css) */
-.teacher-meeting-container {
+/* Updated file: src/components/TeacherMeetingRoom.css */
+.meeting-room-container {
   max-width: 1200px;
-  margin: 50px auto;
+  margin: 20px auto;
   padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
 }
 
-.meeting-room {
+.meeting-layout {
   display: flex;
   gap: 20px;
   height: 600px;
-  margin-top: 20px;
 }
 
 .video-section {
   flex: 2;
-  display: flex;
-  flex-direction: column;
-}
-
-.user-video, .peer-video {
-  width: 100%;
-  height: 200px;
-  background-color: #000;
-  margin: 10px 0;
+  border: 1px solid #ddd;
+  padding: 10px;
   border-radius: 8px;
 }
 
-.peers-videos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  max-height: 300px;
-  overflow-y: auto;
+.local-video, .remote-video {
+  width: 100%;
+  height: 200px;
+  background: #000;
+  margin-bottom: 10px;
+  border-radius: 4px;
 }
 
-.peer-video {
-  width: 200px;
-  height: 150px;
+.remote-videos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.participants-list {
+  margin-top: 10px;
+}
+
+.participants-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.participants-list li {
+  padding: 5px;
+  border-bottom: 1px solid #eee;
 }
 
 .chat-section {
@@ -55,49 +58,276 @@
   flex: 1;
   overflow-y: auto;
   padding: 10px;
-  background-color: #f8f9fa;
+  background: #f8f9fa;
 }
 
 .message {
   margin-bottom: 10px;
   padding: 5px;
+  background: white;
   border-radius: 4px;
-  background-color: white;
 }
 
-.chat-input-form {
+.chat-form {
   display: flex;
   padding: 10px;
   border-top: 1px solid #ddd;
 }
 
-.chat-input-form input {
+.chat-form input {
   flex: 1;
-  padding: 5px;
+  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px 0 0 4px;
 }
 
-.chat-input-form button {
-  padding: 5px 10px;
-  background-color: #007bff;
-  border-radius: 0 4px 4px 0;
+.chat-form button {
+  padding: 8px 12px;
+  background: #007bff;
   color: white;
   border: none;
+  border-radius: 0 4px 4px 0;
   cursor: pointer;
 }
 
 .leave-btn {
+  margin-top: 20px;
   padding: 10px;
-  background-color: #dc3545;
+  background: #dc3545;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 20px;
   width: 100%;
 }
+/* Updated file: src/components/TeacherMeetingRoom.css (layout for sketch: header, main flex, sidebar, footer controls) */
+.meeting-room-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a; /* Dark theme like Meet */
+  color: white;
+  font-family: Arial, sans-serif;
+}
 
-.error {
-  color: red;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: #202124;
+  border-bottom: 1px solid #5f6368;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.leave-btn {
+  background: #d93025;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.main-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.video-section {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: #000;
+}
+
+.teacher-video {
+  margin-bottom: 20px;
+}
+
+.teacher-video h3, .students-videos h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.large-video {
+  width: 100%;
+  max-height: 60vh;
+  background: #000;
+  border-radius: 8px;
+}
+
+.students-videos {
+  flex: 1;
+}
+
+.remote-videos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  height: 100%;
+}
+
+.small-video {
+  width: 100%;
+  height: 120px;
+  background: #000;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.participants-sidebar {
+  flex: 1;
+  background: #202124;
+  padding: 20px;
+  border-left: 1px solid #5f6368;
+  overflow-y: auto;
+}
+
+.participants-sidebar h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.participants-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.participants-sidebar li {
+  padding: 10px 0;
+  border-bottom: 1px solid #5f6368;
+  font-size: 14px;
+}
+
+.controls-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background: #202124;
+  border-top: 1px solid #5f6368;
+}
+
+.control-btn {
+  background: #3c4043;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.control-btn:hover {
+  background: #5f6368;
+}
+
+.error-message {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 10px;
+  margin: 0;
+  text-align: center;
+}
+
+/* Chat Overlay */
+.chat-overlay {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  width: 300px;
+  height: 400px;
+  background: #202124;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.chat-messages {
+  height: 80%;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.chat-form {
+  display: flex;
+  gap: 5px;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 5px;
+  border: none;
+  border-radius: 4px;
+  background: #3c4043;
+  color: white;
+}
+
+.chat-form button {
+  padding: 5px 10px;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Blackboard Modal */
+.blackboard-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.blackboard-content {
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.blackboard-canvas {
+  border: 1px solid #ccc;
+  margin: 10px 0;
+  cursor: crosshair;
+  background: #f9f9f9;
+}
+/* Add to TeacherMeetingRoom.css for notifications */
+.notifications {
+  margin-top: 20px;
+}
+
+.notifications h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
+.notification {
+  font-size: 12px;
+  color: #ccc;
+  margin: 5px 0;
+  padding: 5px;
+  background: #3c4043;
+  border-radius: 4px;
 }
